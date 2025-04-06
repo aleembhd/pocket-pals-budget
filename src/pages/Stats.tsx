@@ -1,16 +1,23 @@
+
 import React, { useState, useEffect } from 'react';
 import { Expense } from '@/components/expense/ExpenseCard';
 import AppLayout from '@/components/layout/AppLayout';
 import { Card } from '@/components/ui/card';
-import { format, startOfWeek, endOfWeek } from 'date-fns';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { format } from 'date-fns';
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 
+interface ExpenseCategory {
+  name: string;
+  value: number;
+  percentage?: number;
+}
+
 const Stats = () => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [viewMode, setViewMode] = useState<'daily' | 'weekly'>('daily');
-  const [chartData, setChartData] = useState<any[]>([]);
+  const [viewMode, setViewMode] = useState<'category' | 'payment'>('category');
+  const [pieData, setPieData] = useState<ExpenseCategory[]>([]);
   
   useEffect(() => {
     // Load expenses from localStorage
@@ -27,72 +34,58 @@ const Stats = () => {
   useEffect(() => {
     if (expenses.length === 0) return;
     
-    if (viewMode === 'daily') {
-      // Group expenses by day
-      const dailyData: { [key: string]: number } = {};
+    if (viewMode === 'category') {
+      // Group expenses by category (using description as proxy for category)
+      const categoryData: { [key: string]: number } = {};
       
       expenses.forEach((expense) => {
-        const day = format(new Date(expense.date), 'MM/dd');
-        if (dailyData[day]) {
-          dailyData[day] += expense.amount;
+        const category = expense.description ? expense.description : 'Uncategorized';
+        if (categoryData[category]) {
+          categoryData[category] += expense.amount;
         } else {
-          dailyData[day] = expense.amount;
+          categoryData[category] = expense.amount;
         }
       });
       
-      // Convert to chart data format
-      const data = Object.keys(dailyData).map((day) => ({
-        name: day,
-        amount: dailyData[day]
+      // Calculate total amount
+      const totalAmount = Object.values(categoryData).reduce((sum, amount) => sum + amount, 0);
+      
+      // Convert to chart data format with percentages
+      const data = Object.entries(categoryData).map(([category, amount]) => ({
+        name: category,
+        value: amount,
+        percentage: Math.round((amount / totalAmount) * 100)
       }));
       
-      // Sort by date
-      data.sort((a, b) => {
-        const [aMonth, aDay] = a.name.split('/').map(Number);
-        const [bMonth, bDay] = b.name.split('/').map(Number);
-        if (aMonth !== bMonth) return aMonth - bMonth;
-        return aDay - bDay;
-      });
-      
-      // Only keep the last 7 days
-      setChartData(data.slice(-7));
+      setPieData(data);
     } else {
-      // Group expenses by week
-      const weeklyData: { [key: string]: number } = {};
+      // Group expenses by payment mode
+      const paymentData: { [key: string]: number } = {};
       
       expenses.forEach((expense) => {
-        const date = new Date(expense.date);
-        const weekStart = format(startOfWeek(date), 'MM/dd');
-        const weekEnd = format(endOfWeek(date), 'MM/dd');
-        const weekKey = `${weekStart} - ${weekEnd}`;
-        
-        if (weeklyData[weekKey]) {
-          weeklyData[weekKey] += expense.amount;
+        const { paymentMode, amount } = expense;
+        if (paymentData[paymentMode]) {
+          paymentData[paymentMode] += amount;
         } else {
-          weeklyData[weekKey] = expense.amount;
+          paymentData[paymentMode] = amount;
         }
       });
       
-      // Convert to chart data format
-      const data = Object.keys(weeklyData).map((week) => ({
-        name: week,
-        amount: weeklyData[week]
+      // Calculate total amount
+      const totalAmount = Object.values(paymentData).reduce((sum, amount) => sum + amount, 0);
+      
+      // Convert to chart data format with percentages
+      const data = Object.entries(paymentData).map(([mode, amount]) => ({
+        name: mode,
+        value: amount,
+        percentage: Math.round((amount / totalAmount) * 100)
       }));
       
-      setChartData(data);
+      setPieData(data);
     }
   }, [expenses, viewMode]);
   
-  // Calculate total spending by payment mode
-  const spendingByMode: { [key: string]: number } = {};
-  expenses.forEach((expense) => {
-    const { paymentMode, amount } = expense;
-    if (spendingByMode[paymentMode]) {
-      spendingByMode[paymentMode] += amount;
-    } else {
-      spendingByMode[paymentMode] = amount;
-    }
-  });
+  const COLORS = ['#7DD3AE', '#80C2FF', '#FFD166', '#D4B2FF', '#FF7C70', '#AECAFC', '#FFC9DD', '#C1E8B0'];
   
   const getModeColor = (mode: string) => {
     switch (mode) {
@@ -103,6 +96,9 @@ const Stats = () => {
       default: return '#CCCCCC';
     }
   };
+
+  // Format currency values for the tooltip
+  const formatTooltipValue = (value: number) => `₹${value.toLocaleString()}`;
   
   return (
     <AppLayout>
@@ -111,54 +107,53 @@ const Stats = () => {
       <div className="mb-6">
         <Card className="card-gradient p-4">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold">Spending Over Time</h2>
+            <h2 className="font-semibold">Spending Breakdown</h2>
             <RadioGroup 
               defaultValue={viewMode} 
-              onValueChange={(value) => setViewMode(value as 'daily' | 'weekly')}
+              onValueChange={(value) => setViewMode(value as 'category' | 'payment')}
               className="flex space-x-4"
             >
               <div className="flex items-center space-x-1">
-                <RadioGroupItem value="daily" id="daily" />
-                <Label htmlFor="daily">Daily</Label>
+                <RadioGroupItem value="category" id="category" />
+                <Label htmlFor="category">By Category</Label>
               </div>
               <div className="flex items-center space-x-1">
-                <RadioGroupItem value="weekly" id="weekly" />
-                <Label htmlFor="weekly">Weekly</Label>
+                <RadioGroupItem value="payment" id="payment" />
+                <Label htmlFor="payment">By Payment</Label>
               </div>
             </RadioGroup>
           </div>
           
-          {chartData.length > 0 ? (
-            <div className="h-64 w-full">
+          {pieData.length > 0 ? (
+            <div className="h-72 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData}>
-                  <XAxis 
-                    dataKey="name" 
-                    tick={{ fontSize: 12 }} 
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <YAxis 
-                    tickLine={false}
-                    axisLine={false}
-                    tick={{ fontSize: 12 }}
-                    tickFormatter={(value) => `₹${value}`}
-                  />
-                  <Tooltip 
-                    formatter={(value) => [`₹${value}`, 'Amount']}
-                    contentStyle={{ borderRadius: '8px' }}
-                  />
-                  <Bar dataKey="amount" radius={[4, 4, 0, 0]}>
-                    {chartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={`hsl(${index * 30}, 70%, 75%)`} />
+                <PieChart>
+                  <Pie
+                    data={pieData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={5}
+                    dataKey="value"
+                    label={({ name, percentage }) => `${name}: ${percentage}%`}
+                    labelLine={false}
+                  >
+                    {pieData.map((entry, index) => (
+                      <Cell 
+                        key={`cell-${index}`} 
+                        fill={viewMode === 'payment' ? getModeColor(entry.name) : COLORS[index % COLORS.length]} 
+                      />
                     ))}
-                  </Bar>
-                </BarChart>
+                  </Pie>
+                  <Tooltip formatter={formatTooltipValue} />
+                  <Legend />
+                </PieChart>
               </ResponsiveContainer>
             </div>
           ) : (
             <div className="h-64 flex items-center justify-center">
-              <p className="text-gray-500">Not enough data to display</p>
+              <p className="text-gray-500 dark:text-gray-400">Not enough data to display</p>
             </div>
           )}
         </Card>
@@ -166,22 +161,36 @@ const Stats = () => {
       
       <div className="mb-6">
         <Card className="card-gradient p-4">
-          <h2 className="font-semibold mb-4">Spending by Payment Mode</h2>
+          <h2 className="font-semibold mb-4">Spending Details</h2>
           
-          {Object.keys(spendingByMode).length > 0 ? (
+          {pieData.length > 0 ? (
             <div className="space-y-3">
-              {Object.entries(spendingByMode).map(([mode, amount]) => (
-                <div key={mode} className="relative">
+              {pieData.map((item, index) => (
+                <div key={item.name} className="relative">
                   <div className="flex justify-between items-center mb-1">
-                    <span className="text-sm font-medium">{mode}</span>
-                    <span className="text-sm font-semibold">₹ {amount.toLocaleString()}</span>
+                    <div className="flex items-center">
+                      <span 
+                        className="w-3 h-3 rounded-full mr-2"
+                        style={{ 
+                          backgroundColor: viewMode === 'payment' 
+                            ? getModeColor(item.name) 
+                            : COLORS[index % COLORS.length] 
+                        }}
+                      ></span>
+                      <span className="text-sm font-medium">{item.name}</span>
+                    </div>
+                    <span className="text-sm font-semibold">
+                      ₹{item.value.toLocaleString()} ({item.percentage}%)
+                    </span>
                   </div>
-                  <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                     <div 
                       className="h-full rounded-full" 
                       style={{ 
-                        backgroundColor: getModeColor(mode),
-                        width: `${(amount / Math.max(...Object.values(spendingByMode))) * 100}%`
+                        backgroundColor: viewMode === 'payment' 
+                          ? getModeColor(item.name) 
+                          : COLORS[index % COLORS.length],
+                        width: `${item.percentage}%`
                       }}
                     />
                   </div>
@@ -190,7 +199,7 @@ const Stats = () => {
             </div>
           ) : (
             <div className="py-4 text-center">
-              <p className="text-gray-500">No spending data available</p>
+              <p className="text-gray-500 dark:text-gray-400">No spending data available</p>
             </div>
           )}
         </Card>

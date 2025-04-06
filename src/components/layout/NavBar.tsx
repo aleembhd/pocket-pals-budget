@@ -1,16 +1,14 @@
 
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Search, History, User, ScanLine, Moon, Sun } from 'lucide-react';
+import { Home, Search, History, User, ScanLine } from 'lucide-react';
 import { motion } from 'framer-motion';
 import QRScanner from '../scanner/QRScanner';
-import { useTheme } from '@/hooks/use-theme';
 
 const NavBar: React.FC = () => {
   const location = useLocation();
   const currentPath = location.pathname;
   const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
-  const { theme, toggleTheme } = useTheme();
 
   const isActive = (path: string) => currentPath === path;
 
@@ -24,7 +22,7 @@ const NavBar: React.FC = () => {
 
   return (
     <>
-      <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 shadow-lg rounded-t-xl z-10">
+      <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 shadow-lg dark:shadow-gray-800/50 rounded-t-xl z-10">
         <div className="flex justify-around items-center h-16 px-4 max-w-md mx-auto relative">
           {navItems.map((item, index) => {
             if (item.isMiddle) {
@@ -62,17 +60,6 @@ const NavBar: React.FC = () => {
               </Link>
             );
           })}
-          
-          <button 
-            onClick={toggleTheme}
-            className="absolute top-4 right-2 text-gray-500 dark:text-gray-300"
-          >
-            {theme === 'dark' ? (
-              <Sun size={18} />
-            ) : (
-              <Moon size={18} />
-            )}
-          </button>
         </div>
       </nav>
       
