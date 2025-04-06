@@ -11,7 +11,7 @@ interface AppLayoutProps {
 
 const AppLayout: React.FC<AppLayoutProps> = ({ children, hideNav = false }) => {
   return (
-    <div className="min-h-screen bg-gradient-blue flex flex-col">
+    <div className="min-h-screen bg-gradient-blue dark:bg-gray-900 flex flex-col">
       <main className="flex-1 container max-w-md mx-auto px-4 pb-20 pt-6">
         <motion.div 
           initial={{ opacity: 0, y: 10 }}
