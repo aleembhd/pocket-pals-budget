@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -66,8 +65,63 @@ const QRScanner = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }
       return;
     }
 
-    // In a real app, we'd construct a payment deep link with the scanned QR data
-    // For demo purposes, we'll navigate to the payment confirmation page
+    // Extract UPI details from the scanned QR code
+    // In a real app, you'd parse the actual scanned value
+    // For demo purposes, we're using our fake QR value which already has UPI format
+    
+    try {
+      // UPI QR codes typically have this format: upi://pay?pa=xyz@upi&pn=Name&am=100&tn=Note
+      const qrUrl = new URL(qrValue);
+      
+      if (qrUrl.protocol === 'upi:') {
+        const searchParams = new URLSearchParams(qrUrl.search);
+        
+        // Get recipient information from the QR
+        const pa = searchParams.get('pa') || 'example@upi'; // Payment address 
+        const pn = searchParams.get('pn') || 'Example Merchant'; // Payee name
+        
+        // Create new UPI parameters with the user-entered amount
+        const upiParams = new URLSearchParams({
+          pa: pa,
+          pn: pn,
+          am: amount,
+          tn: 'QR Payment',
+          cu: 'INR'
+        });
+        
+        const upiUrl = `upi://pay?${upiParams.toString()}`;
+        
+        // Log the deep link for debugging
+        console.log('Opening UPI deep link from QR:', upiUrl);
+        
+        // Use window.location to trigger the deep link
+        window.location.href = upiUrl;
+        
+        // Set a timeout to navigate to the confirmation screen
+        // This gives time for the payment app to open before we navigate away
+        setTimeout(() => {
+          navigate('/payment-confirmation', {
+            state: {
+              amount,
+              paymentMode: 'UPI',
+              description: 'QR Payment'
+            }
+          });
+          onClose();
+        }, 500);
+        
+        return;
+      }
+    } catch (err) {
+      console.error('Error parsing QR code:', err);
+    }
+    
+    // Fallback if QR parsing fails or it's not a UPI QR code
+    toast({
+      title: "QR Code processed",
+      description: "Redirecting to payment confirmation"
+    });
+    
     navigate('/payment-confirmation', {
       state: {
         amount,
