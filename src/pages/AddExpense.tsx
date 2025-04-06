@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -50,60 +51,25 @@ const AddExpense = () => {
   };
   
   const launchPaymentApp = () => {
-    // Create a UPI payment deep link
-    if (paymentMode === 'UPI') {
-      // Create a UPI deep link with the necessary parameters
-      // pa: Payment address (example - merchant UPI ID)
-      // pn: Payee name
-      // am: Amount
-      // tn: Transaction note/description
-      const upiParams = new URLSearchParams({
-        pa: 'example@upi', // Replace with actual merchant UPI ID in production
-        pn: 'Pocket Pals',
-        am: amount,
-        tn: description || 'Expense payment',
-        cu: 'INR'
+    // In a real app, we would use deep linking to open payment apps
+    // For our demo, we'll simulate this with a confirmation
+    
+    const confirmPayment = window.confirm(
+      "This would normally open your payment app (Google Pay, PhonePe, etc). " +
+      "Proceed with payment?"
+    );
+    
+    if (confirmPayment) {
+      // Navigate to confirmation screen
+      navigate('/payment-confirmation', { 
+        state: { 
+          amount, 
+          paymentMode,
+          description 
+        } 
       });
-      
-      const upiUrl = `upi://pay?${upiParams.toString()}`;
-      
-      // Log the deep link for debugging
-      console.log('Opening UPI deep link:', upiUrl);
-      
-      // Use window.location to trigger the deep link which will open the payment app
-      // On mobile browsers this will redirect to the default payment app
-      window.location.href = upiUrl;
-      
-      // Set a timeout to navigate to the confirmation screen
-      // This gives time for the payment app to open before we navigate away
-      setTimeout(() => {
-        navigate('/payment-confirmation', { 
-          state: { 
-            amount, 
-            paymentMode,
-            description 
-          } 
-        });
-        setIsProcessing(false);
-      }, 500);
-    } else if (paymentMode === 'Online') {
-      // For online payments, maintain the existing confirmation flow
-      const confirmPayment = window.confirm(
-        "This would normally open an online payment page. " +
-        "Proceed with payment?"
-      );
-      
-      if (confirmPayment) {
-        navigate('/payment-confirmation', { 
-          state: { 
-            amount, 
-            paymentMode,
-            description 
-          } 
-        });
-      } else {
-        setIsProcessing(false);
-      }
+    } else {
+      setIsProcessing(false);
     }
   };
   
