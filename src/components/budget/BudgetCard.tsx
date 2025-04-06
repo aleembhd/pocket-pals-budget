@@ -30,7 +30,7 @@ const BudgetCard: React.FC<BudgetCardProps> = ({ budget, spent, onSetBudget }) =
       <div className="flex justify-between items-center mb-3">
         <div className="flex items-center">
           <CircleDollarSign className="text-primary mr-2" size={22} />
-          <h2 className="font-semibold text-lg">Monthly Budget</h2>
+          <h2 className="font-semibold text-lg dark:text-white">Monthly Budget</h2>
         </div>
         {onSetBudget && (
           <button 
@@ -43,26 +43,26 @@ const BudgetCard: React.FC<BudgetCardProps> = ({ budget, spent, onSetBudget }) =
       </div>
       
       <div className="flex justify-between items-center mb-2">
-        <span className="text-gray-600 text-sm">Total Budget</span>
-        <span className="font-semibold">₹ {budget.toLocaleString()}</span>
+        <span className="text-gray-600 dark:text-gray-300 text-sm">Total Budget</span>
+        <span className="font-semibold dark:text-white">₹ {budget.toLocaleString()}</span>
       </div>
       
       <div className="flex justify-between mb-4">
         <div className="flex items-center">
           <TrendingDown className="text-budget-red mr-1" size={16} />
-          <span className="text-sm text-gray-600">Spent: <span className="font-medium">₹ {spent.toLocaleString()}</span></span>
+          <span className="text-sm text-gray-600 dark:text-gray-300">Spent: <span className="font-medium dark:text-white">₹ {spent.toLocaleString()}</span></span>
         </div>
         <div className="flex items-center">
           <TrendingUp className="text-budget-green mr-1" size={16} />
-          <span className="text-sm text-gray-600">Left: <span className="font-medium">₹ {remaining.toLocaleString()}</span></span>
+          <span className="text-sm text-gray-600 dark:text-gray-300">Left: <span className="font-medium dark:text-white">₹ {remaining.toLocaleString()}</span></span>
         </div>
       </div>
       
-      <Progress value={percentSpent} className="h-2 bg-gray-200">
+      <Progress value={percentSpent} className="h-2 bg-gray-200 dark:bg-gray-700">
         <div className={`h-full ${getProgressColor()} rounded-full`} style={{ width: `${percentSpent}%` }}></div>
       </Progress>
       
-      <p className="text-xs text-right mt-1 text-gray-500">{percentSpent.toFixed(0)}% spent</p>
+      <p className="text-xs text-right mt-1 text-gray-500 dark:text-gray-300">{percentSpent.toFixed(0)}% spent</p>
     </motion.div>
   );
 };

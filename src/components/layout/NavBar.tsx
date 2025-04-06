@@ -1,14 +1,17 @@
 
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Search, History, User, ScanLine } from 'lucide-react';
+import { Home, Search, History, User, ScanLine, Moon, Sun } from 'lucide-react';
 import { motion } from 'framer-motion';
 import QRScanner from '../scanner/QRScanner';
+import { useTheme } from '@/hooks/use-theme';
+import { Switch } from '@/components/ui/switch';
 
 const NavBar: React.FC = () => {
   const location = useLocation();
   const currentPath = location.pathname;
   const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
+  const { theme, toggleTheme } = useTheme();
 
   const isActive = (path: string) => currentPath === path;
 
@@ -60,6 +63,16 @@ const NavBar: React.FC = () => {
               </Link>
             );
           })}
+          
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center space-x-1">
+            <Moon size={16} className="text-gray-500 dark:text-gray-400" />
+            <Switch
+              checked={theme === 'dark'}
+              onCheckedChange={toggleTheme}
+              className="data-[state=checked]:bg-primary"
+            />
+            <Sun size={16} className="text-gray-500 dark:text-gray-400" />
+          </div>
         </div>
       </nav>
       

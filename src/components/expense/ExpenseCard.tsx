@@ -46,22 +46,22 @@ const ExpenseCard: React.FC<ExpenseCardProps> = ({ expense }) => {
     >
       <div className="flex justify-between items-center">
         <div className="flex items-center space-x-3">
-          <div className="bg-white p-2 rounded-lg shadow-sm">
+          <div className="bg-white dark:bg-gray-700 p-2 rounded-lg shadow-sm">
             {getPaymentIcon()}
           </div>
           <div>
-            <p className="font-medium text-gray-800">
+            <p className="font-medium text-gray-800 dark:text-white">
               {expense.description || expense.paymentMode}
             </p>
-            <div className="flex items-center text-gray-500 text-xs">
+            <div className="flex items-center text-gray-500 dark:text-gray-300 text-xs">
               <Calendar size={12} className="mr-1" />
               <span>{timeAgo}</span>
             </div>
           </div>
         </div>
         <div className="text-right">
-          <p className="font-semibold text-lg">₹ {expense.amount}</p>
-          <p className="text-xs text-gray-500">{expense.paymentMode}</p>
+          <p className="font-semibold text-lg dark:text-white">₹ {expense.amount}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-300">{expense.paymentMode}</p>
         </div>
       </div>
     </motion.div>

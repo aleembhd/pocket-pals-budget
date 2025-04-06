@@ -89,6 +89,17 @@
   .card-gradient {
     @apply bg-gradient-to-br from-white to-secondary/80 backdrop-blur-sm shadow-md dark:from-gray-800 dark:to-gray-900;
   }
+
+  /* Improved dark mode styling for card text */
+  .dark .card-gradient {
+    @apply text-white;
+  }
+  
+  .dark .text-gray-600,
+  .dark .text-gray-500,
+  .dark .text-gray-800 {
+    @apply text-gray-300;
+  }
   
   .animate-enter {
     @apply animate-slide-up;
