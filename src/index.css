@@ -90,18 +90,46 @@
     @apply bg-gradient-to-br from-white to-secondary/80 backdrop-blur-sm shadow-md dark:from-gray-800 dark:to-gray-900;
   }
 
-  /* Improved dark mode styling for card text */
+  /* Improved dark mode styling for cards and text */
+  .dark {
+    @apply bg-gray-900;
+  }
+  
   .dark .card-gradient {
-    @apply text-white;
+    @apply text-white from-gray-800 to-gray-900 border border-gray-700;
+  }
+  
+  .dark .bg-white, 
+  .dark .bg-white\/80 {
+    @apply bg-gray-800 text-white;
   }
   
   .dark .text-gray-600,
   .dark .text-gray-500,
-  .dark .text-gray-800 {
+  .dark .text-gray-800,
+  .dark .text-gray-700 {
     @apply text-gray-300;
+  }
+  
+  .dark .border-gray-200 {
+    @apply border-gray-700;
   }
   
   .animate-enter {
     @apply animate-slide-up;
+  }
+  
+  /* Improved card contrast for dark mode */
+  .dark .bg-secondary {
+    @apply bg-gray-800;
+  }
+  
+  .dark .bg-secondary\/50 {
+    @apply bg-gray-800/50;
+  }
+  
+  /* Fixed NotFound page in dark mode */
+  .dark .bg-gray-100 {
+    @apply bg-gray-900;
   }
 }
