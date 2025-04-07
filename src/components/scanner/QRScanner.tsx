@@ -1,59 +1,90 @@
-
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, QrCode } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import AmountInput from '@/components/ui/amount-input';
 import { useToast } from '@/hooks/use-toast';
+import { Html5QrcodeScanner } from 'html5-qrcode';
+
+interface UPIData {
+  pa: string;  // payee address
+  pn: string;  // payee name
+  mc?: string; // merchant code
+  tid?: string; // transaction id
+  tr?: string; // transaction reference
+  tn?: string; // transaction note
+  url?: string; // url
+  mode?: string; // mode
+  purpose?: string; // purpose
+}
 
 const QRScanner = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const videoRef = useRef<HTMLVideoElement>(null);
   const [scanCompleted, setScanCompleted] = useState(false);
-  const [qrValue, setQrValue] = useState('');
+  const [upiData, setUpiData] = useState<UPIData | null>(null);
   const [amount, setAmount] = useState('');
-  const [cameraPermission, setCameraPermission] = useState<boolean | null>(null);
+  const [scanner, setScanner] = useState<Html5QrcodeScanner | null>(null);
 
-  const startScanner = async () => {
+  // Parse UPI URL to get payment details
+  const parseUPIUrl = (url: string): UPIData | null => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'environment' } 
-      });
-      
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        setCameraPermission(true);
-        
-        // In a real app, we would implement actual QR code scanning
-        // For this demo, we'll simulate a scan after 3 seconds
-        setTimeout(() => {
-          simulateQRScan();
-        }, 3000);
+      if (!url.startsWith('upi://pay?')) {
+        return null;
       }
-    } catch (err) {
-      console.error('Error accessing camera:', err);
-      setCameraPermission(false);
-      toast({
-        title: "Camera access denied",
-        description: "Please allow camera access to scan QR codes",
-        variant: "destructive"
+
+      const params = new URLSearchParams(url.substring(url.indexOf('?')));
+      const data: UPIData = {
+        pa: params.get('pa') || '',
+        pn: params.get('pn') || '',
+      };
+
+      // Add optional parameters if they exist
+      ['mc', 'tid', 'tr', 'tn', 'url', 'mode', 'purpose'].forEach(param => {
+        const value = params.get(param);
+        if (value) {
+          data[param as keyof UPIData] = value;
+        }
       });
+
+      return data;
+    } catch (error) {
+      console.error('Error parsing UPI URL:', error);
+      return null;
     }
   };
 
-  const simulateQRScan = () => {
-    // Simulate finding a UPI QR code
-    const fakeQRValue = "upi://pay?pa=example@okbank&pn=Example%20Merchant";
-    setQrValue(fakeQRValue);
-    setScanCompleted(true);
-    
-    // Stop the camera stream
-    if (videoRef.current && videoRef.current.srcObject) {
-      const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
-      tracks.forEach(track => track.stop());
-    }
+  const initializeScanner = () => {
+    if (!isOpen) return;
+
+    const qrScanner = new Html5QrcodeScanner('qr-reader', {
+      fps: 10,
+      qrbox: { width: 250, height: 250 },
+      aspectRatio: 1,
+      showTorchButtonIfSupported: true,
+    });
+
+    qrScanner.render((decodedText) => {
+      // Handle successful scan
+      const parsedUPIData = parseUPIUrl(decodedText);
+      
+      if (parsedUPIData) {
+        setUpiData(parsedUPIData);
+        setScanCompleted(true);
+        qrScanner.clear();
+      } else {
+        toast({
+          title: "Invalid QR Code",
+          description: "Please scan a valid UPI payment QR code",
+          variant: "destructive"
+        });
+      }
+    }, (errorMessage) => {
+      // Continue scanning - no need to handle errors for ongoing scanning
+    });
+
+    setScanner(qrScanner);
   };
 
   const handlePay = () => {
@@ -66,30 +97,58 @@ const QRScanner = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }
       return;
     }
 
-    // In a real app, we'd construct a payment deep link with the scanned QR data
-    // For demo purposes, we'll navigate to the payment confirmation page
-    navigate('/payment-confirmation', {
-      state: {
-        amount,
-        paymentMode: 'UPI',
-        description: 'QR Payment'
-      }
-    });
+    if (!upiData) {
+      toast({
+        title: "Invalid QR data",
+        description: "Please scan a valid UPI QR code",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Construct UPI deep link URL with all available parameters
+    const upiURL = new URL('upi://pay');
+    const params = new URLSearchParams();
+    params.append('pa', upiData.pa);
+    params.append('pn', upiData.pn);
+    params.append('am', amount);
+    
+    // Add optional parameters if they exist
+    if (upiData.mc) params.append('mc', upiData.mc);
+    if (upiData.tid) params.append('tid', upiData.tid);
+    if (upiData.tr) params.append('tr', upiData.tr);
+    if (upiData.tn) params.append('tn', upiData.tn);
+    if (upiData.url) params.append('url', upiData.url);
+    if (upiData.mode) params.append('mode', upiData.mode);
+    if (upiData.purpose) params.append('purpose', upiData.purpose);
+
+    // Create the deep link
+    const deepLink = `${upiURL}?${params.toString()}`;
+
+    // Try to open the UPI deep link
+    window.location.href = deepLink;
+
+    // Set a timeout to check if the deep link was handled
+    setTimeout(() => {
+      // If we're still here after 1 second, assume no UPI app handled the deep link
+      toast({
+        title: "No UPI app found",
+        description: "Please install a UPI payment app to proceed",
+        variant: "destructive"
+      });
+    }, 1000);
     
     onClose();
   };
 
-  // Start scanner when component mounts and is open
-  React.useEffect(() => {
+  useEffect(() => {
     if (isOpen && !scanCompleted) {
-      startScanner();
+      initializeScanner();
     }
-    
-    // Cleanup function to stop camera when component unmounts
+
     return () => {
-      if (videoRef.current && videoRef.current.srcObject) {
-        const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
-        tracks.forEach(track => track.stop());
+      if (scanner) {
+        scanner.clear();
       }
     };
   }, [isOpen]);
@@ -116,7 +175,12 @@ const QRScanner = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }
               <Button 
                 variant="ghost" 
                 size="icon" 
-                onClick={onClose}
+                onClick={() => {
+                  if (scanner) {
+                    scanner.clear();
+                  }
+                  onClose();
+                }}
                 className="rounded-full"
               >
                 <X size={20} />
@@ -125,31 +189,14 @@ const QRScanner = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }
 
             {!scanCompleted ? (
               <div className="aspect-square rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-900 relative mb-4">
-                {cameraPermission === false && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center">
-                    <QrCode size={48} className="mb-2 text-gray-400" />
-                    <p className="text-gray-500 dark:text-gray-400">Camera access is required to scan QR codes.</p>
-                    <Button 
-                      onClick={startScanner} 
-                      className="mt-4"
-                    >
-                      Try Again
-                    </Button>
-                  </div>
-                )}
-                <video 
-                  ref={videoRef}
-                  autoPlay 
-                  playsInline
-                  className="w-full h-full object-cover"
-                ></video>
-                <div className="absolute inset-0 border-2 border-primary rounded-xl"></div>
+                <div id="qr-reader" className="w-full h-full"></div>
               </div>
             ) : (
               <div className="space-y-4">
                 <div className="rounded-xl bg-gray-100 dark:bg-gray-900 p-3">
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">QR Scanned</p>
-                  <p className="text-sm font-medium truncate">{qrValue}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Paying to</p>
+                  <p className="text-sm font-medium">{upiData?.pn}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{upiData?.pa}</p>
                 </div>
                 
                 <div className="space-y-2">
