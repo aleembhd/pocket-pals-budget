@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Search, History, User, ScanLine } from 'lucide-react';
+import { Home, PieChart, ScanLine, User, Target } from 'lucide-react';
 import { motion } from 'framer-motion';
 import QRScanner from '../scanner/QRScanner';
 
@@ -14,9 +14,9 @@ const NavBar: React.FC = () => {
 
   const navItems = [
     { icon: Home, label: 'Home', path: '/' },
-    { icon: Search, label: 'Search', path: '/search' },
+    { icon: PieChart, label: 'Stats', path: '/stats' },
     { label: 'Scan', path: '/scan', isMiddle: true },
-    { icon: History, label: 'Stats', path: '/stats' },
+    { icon: Target, label: 'Goals', path: '/goals' },
     { icon: User, label: 'Profile', path: '/profile' },
   ];
 

@@ -6,6 +6,8 @@ import { PlusCircle } from 'lucide-react';
 import AppLayout from '@/components/layout/AppLayout';
 import BudgetCard from '@/components/budget/BudgetCard';
 import ExpenseCard, { Expense } from '@/components/expense/ExpenseCard';
+import TodaysSpendCard from '@/components/dashboard/TodaysSpendCard';
+import WeeklyTip from '@/components/tips/WeeklyTip';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 
@@ -15,6 +17,8 @@ const Index = () => {
   const [budget, setBudget] = useState<number>(0);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [totalSpent, setTotalSpent] = useState<number>(0);
+  const [todaySpent, setTodaySpent] = useState<number>(0);
+  const [todayStatus, setTodayStatus] = useState<'good' | 'warning' | 'danger'>('good');
   
   // On first visit, check if we have a budget set
   useEffect(() => {
@@ -37,6 +41,31 @@ const Index = () => {
       // Calculate total spent
       const total = parsedExpenses.reduce((sum: number, exp: Expense) => sum + exp.amount, 0);
       setTotalSpent(total);
+      
+      // Calculate today's spending
+      const today = new Date();
+      const todayExpenses = parsedExpenses.filter((exp: Expense) => {
+        const expDate = new Date(exp.date);
+        return expDate.getDate() === today.getDate() && 
+               expDate.getMonth() === today.getMonth() && 
+               expDate.getFullYear() === today.getFullYear();
+      });
+      
+      const todayTotal = todayExpenses.reduce((sum: number, exp: Expense) => sum + exp.amount, 0);
+      setTodaySpent(todayTotal);
+      
+      // Calculate daily budget (budget / days in month)
+      const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+      const dailyBudget = Number(savedBudget) / daysInMonth;
+      
+      // Set status based on today's spending vs daily budget
+      if (todayTotal <= dailyBudget * 0.5) {
+        setTodayStatus('good');
+      } else if (todayTotal <= dailyBudget) {
+        setTodayStatus('warning');
+      } else {
+        setTodayStatus('danger');
+      }
     }
   }, [navigate]);
 
@@ -46,29 +75,33 @@ const Index = () => {
         <motion.h1 
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-2xl font-bold"
+          className="text-2xl font-bold dark:text-white"
         >
           Money Tracker
         </motion.h1>
         <motion.p 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1, transition: { delay: 0.1 } }}
-          className="text-gray-600"
+          className="text-gray-600 dark:text-gray-300"
         >
           Track your expenses with ease
         </motion.p>
       </header>
       
-      {budget > 0 && (
-        <BudgetCard 
-          budget={budget} 
-          spent={totalSpent} 
-          onSetBudget={() => navigate('/set-budget')}
-        />
-      )}
+      <div className="space-y-4">
+        {budget > 0 && (
+          <BudgetCard 
+            budget={budget} 
+            spent={totalSpent} 
+            onSetBudget={() => navigate('/set-budget')}
+          />
+        )}
+        
+        <TodaysSpendCard amount={todaySpent} status={todayStatus} />
+      </div>
       
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="font-semibold text-lg">Recent Expenses</h2>
+      <div className="flex justify-between items-center mb-4 mt-6">
+        <h2 className="font-semibold text-lg dark:text-white">Recent Expenses</h2>
         <Button
           onClick={() => navigate('/add-expense')}
           className="btn-gradient flex items-center gap-1 rounded-full px-4 py-1 h-8"
@@ -86,7 +119,7 @@ const Index = () => {
         </AnimatePresence>
       ) : (
         <div className="text-center py-8">
-          <p className="text-gray-500">No expenses yet</p>
+          <p className="text-gray-500 dark:text-gray-400">No expenses yet</p>
           <Button
             onClick={() => navigate('/add-expense')}
             className="btn-gradient mt-4"
@@ -95,6 +128,9 @@ const Index = () => {
           </Button>
         </div>
       )}
+      
+      {/* Weekly AI Tip */}
+      <WeeklyTip expenses={expenses} />
     </AppLayout>
   );
 };

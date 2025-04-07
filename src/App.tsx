@@ -10,6 +10,7 @@ import SetBudget from "./pages/SetBudget";
 import AddExpense from "./pages/AddExpense";
 import PaymentConfirmation from "./pages/PaymentConfirmation";
 import Stats from "./pages/Stats";
+import Goals from "./pages/Goals";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
@@ -28,6 +29,7 @@ const App = () => (
             <Route path="/add-expense" element={<AddExpense />} />
             <Route path="/payment-confirmation" element={<PaymentConfirmation />} />
             <Route path="/stats" element={<Stats />} />
+            <Route path="/goals" element={<Goals />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
