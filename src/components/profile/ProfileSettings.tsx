@@ -24,12 +24,12 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ onReset, onExport }) 
   
   return (
     <div className="space-y-3">
-      <h2 className="text-lg font-semibold mb-2 dark:text-white">Settings</h2>
+      <h2 className="text-xl font-bold mb-3 dark:text-white">Settings</h2>
       
       <Button
         onClick={onExport}
         variant="outline"
-        className="w-full justify-start bg-white/80 dark:bg-gray-800 dark:text-white"
+        className="w-full justify-start bg-white dark:bg-gray-800 dark:text-white"
       >
         <Download size={18} className="mr-2" />
         Export Data
@@ -38,7 +38,7 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ onReset, onExport }) 
       <Button
         onClick={() => setShowResetDialog(true)}
         variant="outline"
-        className="w-full justify-start text-destructive hover:text-destructive bg-white/80 dark:bg-gray-800"
+        className="w-full justify-start text-red-500 hover:text-red-600 bg-white dark:bg-gray-800"
       >
         <Trash2 size={18} className="mr-2" />
         Reset All Data

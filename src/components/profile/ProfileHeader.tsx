@@ -120,19 +120,19 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
       <div className="flex items-center mb-4">
         <div className="flex flex-col md:flex-row w-full">
           <div className="flex items-center">
-            <Avatar className="h-16 w-16 mr-4">
+            <Avatar className="h-20 w-20 mr-4 border-4 border-primary/20">
               {profileData.profilePicture ? (
                 <AvatarImage src={profileData.profilePicture} alt="Profile" />
               ) : (
-                <AvatarFallback className="bg-primary text-primary-foreground text-lg">
+                <AvatarFallback className="bg-primary text-primary-foreground text-xl">
                   {getInitials(profileData.name)}
                 </AvatarFallback>
               )}
             </Avatar>
             
             <div>
-              <h2 className="text-xl font-semibold dark:text-white">
-                {profileData.name || "User"}
+              <h2 className="text-2xl font-bold dark:text-white">
+                {profileData.name || "Your Name"}
               </h2>
               {!editMode && profileData.email && (
                 <p className="text-sm text-gray-600 dark:text-gray-300">{profileData.email}</p>
@@ -141,7 +141,8 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                 <p className="text-sm text-gray-600 dark:text-gray-300">{profileData.phone}</p>
               )}
               {!editMode && !isProfileComplete && (
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                <p className="text-sm flex items-center text-primary mt-2">
+                  <UserCheck size={16} className="mr-1" />
                   Complete your profile to earn a badge!
                 </p>
               )}
@@ -154,7 +155,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                 variant="outline" 
                 size="sm" 
                 onClick={() => setEditMode(true)}
-                className="bg-white/80 dark:bg-gray-800 dark:text-white"
+                className="bg-white/80 dark:bg-gray-800 dark:text-white hover:bg-primary/10"
               >
                 <Edit size={16} className="mr-2" />
                 {isProfileComplete ? "Edit Profile" : "Complete Profile"}
@@ -163,6 +164,26 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
           )}
         </div>
       </div>
+      
+      {/* Profile completion indicator */}
+      {!isProfileComplete && !editMode && (
+        <div className="bg-primary/10 rounded-lg p-3 mt-2">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium">Profile completion</span>
+            <span className="text-sm font-medium">
+              {profileData.name ? (profileData.email ? (profileData.phone ? "100" : "66") : "33") : "0"}%
+            </span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2 mt-2 dark:bg-gray-700">
+            <div 
+              className="bg-primary h-2 rounded-full" 
+              style={{ 
+                width: `${profileData.name ? (profileData.email ? (profileData.phone ? "100" : "66") : "33") : "0"}%` 
+              }}
+            ></div>
+          </div>
+        </div>
+      )}
       
       {editMode && (
         <Dialog open={editMode} onOpenChange={setEditMode}>
@@ -176,11 +197,11 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
             
             <div className="flex justify-center mb-4">
               <div className="relative">
-                <Avatar className="h-20 w-20">
+                <Avatar className="h-24 w-24">
                   {profileData.profilePicture ? (
                     <AvatarImage src={profileData.profilePicture} alt="Profile" />
                   ) : (
-                    <AvatarFallback className="bg-primary text-primary-foreground text-lg">
+                    <AvatarFallback className="bg-primary text-primary-foreground text-xl">
                       {getInitials(profileData.name)}
                     </AvatarFallback>
                   )}
@@ -188,10 +209,10 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                 <Button 
                   size="sm" 
                   variant="outline" 
-                  className="absolute bottom-0 right-0 rounded-full h-8 w-8 p-0"
+                  className="absolute bottom-0 right-0 rounded-full h-8 w-8 p-0 bg-primary hover:bg-primary/90"
                   onClick={() => document.getElementById('profilePicture')?.click()}
                 >
-                  <Edit size={14} />
+                  <Edit size={14} className="text-white" />
                 </Button>
                 <input 
                   type="file" 
@@ -205,12 +226,12 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
             
             <div className="space-y-4 py-2">
               <div className="space-y-2">
-                <label htmlFor="name" className="text-sm font-medium dark:text-white">Name</label>
+                <label htmlFor="name" className="text-sm font-medium dark:text-white">Full Name</label>
                 <Input 
                   id="name" 
                   value={profileData.name} 
                   onChange={e => setProfileData({...profileData, name: e.target.value})}
-                  placeholder="Your name"
+                  placeholder="Enter your name"
                 />
               </div>
               
@@ -238,7 +259,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
             
             <DialogFooter>
               <Button variant="outline" onClick={() => setEditMode(false)}>Cancel</Button>
-              <Button onClick={saveProfileData}>Save Changes</Button>
+              <Button onClick={saveProfileData} className="bg-primary hover:bg-primary/90">Save Changes</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
