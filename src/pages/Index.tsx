@@ -2,14 +2,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, AlertCircle } from 'lucide-react';
 import AppLayout from '@/components/layout/AppLayout';
 import BudgetCard from '@/components/budget/BudgetCard';
 import ExpenseCard, { Expense } from '@/components/expense/ExpenseCard';
 import TodaysSpendCard from '@/components/dashboard/TodaysSpendCard';
-import WeeklyTip from '@/components/tips/WeeklyTip';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -19,6 +19,8 @@ const Index = () => {
   const [totalSpent, setTotalSpent] = useState<number>(0);
   const [todaySpent, setTodaySpent] = useState<number>(0);
   const [todayStatus, setTodayStatus] = useState<'good' | 'warning' | 'danger'>('good');
+  const [showBudgetAlert, setShowBudgetAlert] = useState<boolean>(false);
+  const [lastAlertPercentage, setLastAlertPercentage] = useState<number>(0);
   
   // On first visit, check if we have a budget set
   useEffect(() => {
@@ -66,8 +68,32 @@ const Index = () => {
       } else {
         setTodayStatus('danger');
       }
+
+      // Check if we need to show budget alert
+      const percentSpent = (total / Number(savedBudget)) * 100;
+      const savedLastAlertPercentage = localStorage.getItem('lastAlertPercentage');
+      const lastAlert = savedLastAlertPercentage ? Number(savedLastAlertPercentage) : 0;
+      setLastAlertPercentage(lastAlert);
+
+      // Show alert at 25%, 50%, 75% thresholds
+      const thresholds = [25, 50, 75, 90];
+      
+      for (const threshold of thresholds) {
+        if (percentSpent >= threshold && lastAlert < threshold) {
+          setShowBudgetAlert(true);
+          setLastAlertPercentage(threshold);
+          localStorage.setItem('lastAlertPercentage', threshold.toString());
+          break;
+        }
+      }
     }
   }, [navigate]);
+
+  const handleDismissAlert = () => {
+    setShowBudgetAlert(false);
+  };
+
+  const percentSpent = budget > 0 ? Math.round((totalSpent / budget) * 100) : 0;
 
   return (
     <AppLayout>
@@ -87,6 +113,30 @@ const Index = () => {
           Track your expenses with ease
         </motion.p>
       </header>
+      
+      {showBudgetAlert && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-4"
+        >
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Budget Alert</AlertTitle>
+            <AlertDescription>
+              You have spent {lastAlertPercentage}% of your monthly budget. Consider reviewing your expenses.
+            </AlertDescription>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleDismissAlert}
+              className="mt-2"
+            >
+              Dismiss
+            </Button>
+          </Alert>
+        </motion.div>
+      )}
       
       <div className="space-y-4">
         {budget > 0 && (
@@ -128,9 +178,6 @@ const Index = () => {
           </Button>
         </div>
       )}
-      
-      {/* Weekly AI Tip */}
-      <WeeklyTip expenses={expenses} />
     </AppLayout>
   );
 };

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { DollarSign } from 'lucide-react';
+import { DollarSign, Coins } from 'lucide-react';
 
 interface TodaysSpendCardProps {
   amount: number;
@@ -28,14 +28,17 @@ const TodaysSpendCard: React.FC<TodaysSpendCardProps> = ({ amount, status }) => 
       animate={{ opacity: 1, y: 0 }}
       className="card-gradient rounded-xl p-4 shadow-sm"
     >
-      <div className="flex items-center">
-        <div className={`${getStatusColor()} rounded-full p-2 mr-3`}>
-          <DollarSign size={16} className="text-white" />
+      <div className="flex items-center justify-between">
+        <div className="flex items-center">
+          <div className={`${getStatusColor()} rounded-full p-2 mr-3`}>
+            <DollarSign size={16} className="text-white" />
+          </div>
+          <div>
+            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-300">Today's Spend</h3>
+            <p className="text-lg font-bold">₹ {amount.toLocaleString()}</p>
+          </div>
         </div>
-        <div>
-          <h3 className="text-sm font-medium text-gray-600 dark:text-gray-300">Today's Spend</h3>
-          <p className="text-lg font-bold">₹ {amount.toLocaleString()}</p>
-        </div>
+        <Coins size={24} className="text-gray-400 dark:text-gray-500" />
       </div>
     </motion.div>
   );

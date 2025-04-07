@@ -54,7 +54,7 @@ const BudgetCard: React.FC<BudgetCardProps> = ({ budget, spent, onSetBudget }) =
         </div>
         <div className="flex items-center">
           <TrendingUp className="text-budget-green mr-1" size={16} />
-          <span className="text-sm text-gray-600 dark:text-gray-300">Left: <span className="font-medium dark:text-white">₹ {remaining.toLocaleString()}</span></span>
+          <span className="text-sm text-gray-600 dark:text-gray-300">Left: <span className="font-medium text-budget-green dark:text-budget-green font-bold">₹ {remaining.toLocaleString()}</span></span>
         </div>
       </div>
       
