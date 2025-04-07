@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Calendar, CreditCard, Smartphone, Coins, ArrowUpRight } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
@@ -11,6 +10,8 @@ export interface Expense {
   paymentMode: PaymentMode;
   date: Date;
   description?: string;
+  payeeName?: string;
+  payeeAddress?: string;
 }
 
 interface ExpenseCardProps {

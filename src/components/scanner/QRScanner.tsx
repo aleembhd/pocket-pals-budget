@@ -235,11 +235,26 @@ const QRScanner = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }
     const deepLink = `${upiURL}?${params.toString()}`;
     console.log('Attempting UPI Deep Link:', deepLink);
 
-    // Use window.location.href for deep linking
-    window.location.href = deepLink; 
+    // Trigger the UPI deep link
+    window.location.href = deepLink;
 
-    // Close our scanner UI immediately
-    handleClose(); 
+    // Store details for confirmation screen
+    const paymentDetails = {
+      amount,
+      upiData,
+      note
+    };
+
+    // Navigate to confirmation screen *after* attempting deep link
+    // We'll need a slight delay to allow the browser to process the deep link
+    setTimeout(() => {
+      navigate('/payment-confirmation', { state: { paymentDetails } });
+      // Close the scanner *after* navigating
+      handleClose();
+    }, 100); // Short delay
+
+    // Don't close immediately or navigate here
+    // handleClose(); 
 
     // Note: The check for whether a UPI app handled the link is difficult and unreliable.
     // We generally assume it works or the OS/browser handles the failure.
@@ -373,7 +388,7 @@ const QRScanner = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }
                             onChange={setAmount}
                             placeholder="Enter amount"
                             className="w-full"
-                            inputClassName="text-4xl font-bold text-center focus:ring-0 h-auto bg-transparent text-white w-full border border-primary rounded-xl py-3 pr-4 placeholder-gray-400"
+                            inputClassName="text-4xl placeholder:text-xl font-bold text-center focus:ring-0 h-auto bg-transparent text-white w-full border border-primary rounded-xl py-3 pr-4 placeholder-gray-400"
                             disabled={!!upiData?.am}
                         />
                          {upiData?.am && (

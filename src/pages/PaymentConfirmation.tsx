@@ -1,123 +1,119 @@
-
-import React, { useState } from 'react';
+import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Check, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
-import AppLayout from '@/components/layout/AppLayout';
 import { v4 as uuidv4 } from 'uuid';
-import { PaymentMode } from '@/components/expense/PaymentModeSelector';
-import { Expense } from '@/components/expense/ExpenseCard';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'; // Assuming shadcn card
+import AppLayout from '@/components/layout/AppLayout';
+import { useToast } from '@/hooks/use-toast';
+import { Expense, PaymentMode } from '@/components/expense/ExpenseCard'; // Assuming Expense type is here
 
 const PaymentConfirmation = () => {
-  const location = useLocation();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
-  const [isConfirming, setIsConfirming] = useState(false);
-  
-  // Get data from location state
-  const { amount, paymentMode, description } = location.state || {};
-  
-  if (!amount || !paymentMode) {
-    // Redirect if data is missing
-    navigate('/add-expense');
-    return null;
-  }
-  
-  const handleConfirm = (successful: boolean) => {
-    setIsConfirming(true);
-    
-    if (successful) {
-      // Save the expense if payment was successful
-      const newExpense: Expense = {
-        id: uuidv4(),
-        amount: Number(amount),
-        paymentMode: paymentMode as PaymentMode,
-        date: new Date(),
-        description: description || undefined
-      };
-      
-      // Get existing expenses
-      const existingExpensesJson = localStorage.getItem('expenses');
-      const existingExpenses = existingExpensesJson ? JSON.parse(existingExpensesJson) : [];
-      
-      // Add new expense and save back to localStorage
-      const updatedExpenses = [newExpense, ...existingExpenses];
-      localStorage.setItem('expenses', JSON.stringify(updatedExpenses));
-      
+
+  // Extract payment details safely
+  const paymentDetails = location.state?.paymentDetails;
+
+  if (!paymentDetails || !paymentDetails.upiData) {
+    // Handle cases where navigation state is missing (e.g., direct access)
+    React.useEffect(() => {
       toast({
-        title: "Payment successful",
-        description: `Added ₹${Number(amount).toLocaleString()} expense`
+        title: "Error",
+        description: "Payment details not found. Returning home.",
+        variant: "destructive",
       });
-    } else {
-      toast({
-        title: "Payment cancelled",
-        description: "No expense has been recorded",
-        variant: "destructive"
-      });
-    }
-    
-    // Redirect to home after a short delay
-    setTimeout(() => {
       navigate('/');
-    }, 300);
+    }, [navigate, toast]);
+    return <AppLayout><div>Loading or redirecting...</div></AppLayout>; // Or a proper loading state
+  }
+
+  const { amount, upiData, note } = paymentDetails;
+
+  const saveExpense = () => {
+    // Create new expense object
+    const newExpense: Expense = {
+      id: uuidv4(),
+      amount: Number(amount),
+      paymentMode: 'UPI', // Payment was via UPI QR scan
+      date: new Date(),
+      description: note || `Paid to ${upiData.pn}`, // Use note or generate description
+      payeeName: upiData.pn, // Store payee name
+      payeeAddress: upiData.pa // Store payee address
+    };
+
+    // Retrieve existing expenses from localStorage
+    const existingExpensesJson = localStorage.getItem('expenses');
+    const existingExpenses = existingExpensesJson ? JSON.parse(existingExpensesJson) : [];
+
+    // Add new expense and save back to localStorage
+    const updatedExpenses = [newExpense, ...existingExpenses];
+    localStorage.setItem('expenses', JSON.stringify(updatedExpenses));
+
+    toast({
+      title: "Payment Confirmed",
+      description: `Recorded ₹${Number(amount).toLocaleString()} expense to ${upiData.pn}`
+    });
+
+    navigate('/');
   };
-  
+
+  const handleConfirm = () => {
+    saveExpense();
+  };
+
+  const handleCancel = () => {
+    toast({
+      title: "Payment Not Confirmed",
+      description: "Expense was not recorded.",
+      variant: "secondary" // Use a less prominent variant
+    });
+    navigate('/');
+  };
+
   return (
-    <AppLayout hideNav>
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="h-full flex flex-col items-center justify-center py-10 px-4"
-      >
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold mb-2">Payment Confirmation</h1>
-          <p className="text-gray-600">
-            Did your payment of ₹{Number(amount).toLocaleString()} complete successfully?
-          </p>
-        </div>
-        
-        <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 w-full max-w-sm shadow-md">
-          <div className="mb-6">
-            <p className="text-gray-500 text-sm">Amount</p>
-            <p className="text-2xl font-bold">₹ {Number(amount).toLocaleString()}</p>
-          </div>
-          
-          <div className="mb-6">
-            <p className="text-gray-500 text-sm">Payment Method</p>
-            <p className="font-medium">{paymentMode}</p>
-          </div>
-          
-          {description && (
-            <div className="mb-6">
-              <p className="text-gray-500 text-sm">Description</p>
-              <p className="font-medium">{description}</p>
+    <AppLayout hideNav> {/* Hide nav bar on this confirmation screen */}
+      <div className="flex flex-col justify-center items-center h-full p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="text-center text-2xl">Confirm Payment</CardTitle>
+            <CardDescription className="text-center">
+              Did your payment of ₹{Number(amount).toLocaleString()} succeed?
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex justify-between items-center p-3 bg-gray-100 dark:bg-gray-800 rounded-lg">
+              <span className="text-sm text-gray-600 dark:text-gray-400">Paying To</span>
+              <span className="font-medium text-right">{upiData.pn || 'Merchant'}</span>
             </div>
-          )}
-        </div>
-        
-        <div className="flex gap-4 mt-8 w-full max-w-sm">
-          <Button
-            onClick={() => handleConfirm(true)}
-            disabled={isConfirming}
-            className="flex-1 flex items-center justify-center gap-2 bg-budget-green text-white h-14 rounded-xl font-medium"
-          >
-            <Check size={20} />
-            <span>Yes, Successful</span>
-          </Button>
-          
-          <Button
-            onClick={() => handleConfirm(false)}
-            disabled={isConfirming}
-            variant="outline"
-            className="flex-1 flex items-center justify-center gap-2 border-budget-red text-budget-red h-14 rounded-xl font-medium"
-          >
-            <X size={20} />
-            <span>No, Failed</span>
-          </Button>
-        </div>
-      </motion.div>
+            <div className="flex justify-between items-center p-3 bg-gray-100 dark:bg-gray-800 rounded-lg">
+              <span className="text-sm text-gray-600 dark:text-gray-400">UPI Address</span>
+              <span className="font-medium text-sm text-right">{upiData.pa}</span>
+            </div>
+             {note && (
+               <div className="flex justify-between items-center p-3 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Note</span>
+                  <span className="font-medium text-sm text-right">{note}</span>
+               </div>
+             )}
+          </CardContent>
+          <CardFooter className="flex flex-col gap-3 pt-4">
+             <Button
+                onClick={handleConfirm}
+                className="w-full py-3 text-base btn-gradient"
+             >
+                Yes, Payment Successful
+             </Button>
+             <Button
+                onClick={handleCancel}
+                variant="outline"
+                className="w-full py-3 text-base"
+             >
+                No, Payment Failed
+             </Button>
+          </CardFooter>
+        </Card>
+      </div>
     </AppLayout>
   );
 };
